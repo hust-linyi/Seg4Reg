@@ -55,6 +55,7 @@ def test(net, epoch, dataLoader, parser, test_results_list):
                 angle_gt_list.append(label[i])
 
     angle_abs_mean_error = np.mean(np.abs(np.array(angle_pred_list) - np.array(angle_gt_list)), 0)
+    test_results_list.append(angle_abs_mean_error)
     print('Abs Error: %.4f, %.4f, %.4f' % (angle_abs_mean_error[0] * 90, angle_abs_mean_error[1] * 90, angle_abs_mean_error[2] * 90))
 
 def adjust_lr(optimizer, epoch):
@@ -124,7 +125,7 @@ def main(parser):
 
     for k, v in parser.items():
         print('{}: {}'.format(k, v))
-    print()
+    print(test_results)
     test_results = np.mean(test_results[-10:, :], 0)
     print('min_abs_angle: %.4f, %.4f, %.4f' % (test_results[0]*90, test_results[1]*90, test_results[2]*90))
 
@@ -133,18 +134,18 @@ if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
     platform = 'sever'
     parser = {}
-    parser["epochs"] = 90
+    parser["epochs"] = 4
     parser["weight_decay"] = 1e-4
     parser["lr"] = 1e-2
     parser["save_path"] = "logs"
-    parser["visual_dir"] = ""
+    parser["visual_dir"] = "visual"
     parser["img_size"] = [512, 256]
     parser["sigma"] = 0.01
     parser["stride"] = 4
 
-    parser["data_dir"] = ""
-    parser["batch_size"] = 32
-    parser["test_batch_size"] = 32
+    parser["data_dir"] = "../boostnet_labeldata"
+    parser["batch_size"] = 4
+    parser["test_batch_size"] = 4
     parser["net"] = "dense169"
 
     if platform == 'win':
