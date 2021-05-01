@@ -78,7 +78,13 @@ def _putGaussianMap(center, crop_size_y, crop_size_x, stride, sigma):
     d2 = (xx - center[0]) ** 2 + (yy - center[1]) ** 2
     exponent = d2 / 2.0 / sigma / sigma
     heatmap = np.exp(-exponent)
-    heatmap[int(center[1]*grid_y), int(center[0]*grid_x)] = 1
+    y = center[1]
+    x = center[0]
+    if y>=grid_y:
+        y= grid_y-1
+    if x>= grid_x:
+        x= grid_x-1
+    heatmap[int(y), int(x)] = 1
     return heatmap
 
 def _putGaussianMaps(keypoints, crop_size_y, crop_size_x, stride, sigma):
