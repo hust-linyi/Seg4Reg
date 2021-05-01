@@ -1,6 +1,9 @@
+import datetime
 import os
 from tqdm import tqdm
 import torch
+from torch.utils.tensorboard import SummaryWriter
+writer = SummaryWriter()
 import argparse
 import shutil
 import numpy as np
@@ -17,7 +20,6 @@ matplotlib.use("Agg")
 from matplotlib import pyplot as plt
 import itertools
 from libs.metrics import  compute_mse
-import cv2
 
 
 def train_epoch(net, epoch, dataLoader, optimizer, loss_list):
@@ -113,11 +115,17 @@ def main(parser):
 #    optimizer = torch.optim.Adam(net.parameters(), lr=3e-3, weight_decay=parser["weight_decay"])
 
     loss_list, test_results_list = [], []
+    #writer = SummaryWriter()
+
     for epoch in range(parser["epochs"]):
         adjust_lr(optimizer, epoch)
         train_epoch(net, epoch, training_data_batch, optimizer, loss_list)
         test(net, epoch, val_data_batch, parser, test_results_list)
-
+        #logging training loss into tb
+        writer.add_scalar("Loss/train_avg", loss_list[-1], epoch)
+        # for i in loss_list:
+        #     writer.add_scalar("Loss/train"+str(i), i, epoch)
+    writer.flush()
     plt.plot(np.linspace(0, parser["epochs"], len(loss_list)), loss_list)
     plt.savefig(os.path.join('./', 'angle_training_loss.png'))
     torch.save(net, os.path.join(os.getcwd(), parser["save_path"], "angle_baseline.pth"))
@@ -144,8 +152,8 @@ if __name__ == "__main__":
     parser["stride"] = 4
 
     parser["data_dir"] = "../boostnet_labeldata"
-    parser["batch_size"] = 4
-    parser["test_batch_size"] = 4
+    parser["batch_size"] = 1
+    parser["test_batch_size"] = 1
     parser["net"] = "dense169"
 
     if platform == 'win':
