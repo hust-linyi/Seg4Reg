@@ -1,5 +1,7 @@
 import datetime
 import os
+
+import torchvision
 from tqdm import tqdm
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -89,6 +91,28 @@ def main(parser):
                                                            ToTensor()]))
     val_data_batch = DataLoader(val_dataset, batch_size=parser["test_batch_size"], ** kwargs)
 
+    #log training images to TB
+    dataiter_train = iter(training_data_batch)
+    outs = dataiter_train.next()
+    # create grid of images
+    train_img_grid = torchvision.utils.make_grid(outs["image"])
+    train_heatmap_grid = torchvision.utils.make_grid(outs["heatmap"])
+    # write to tensorboard
+    writer.add_image('Train/images', train_img_grid)
+    writer.add_image('Train/heatmap', train_heatmap_grid)
+
+    # log val images to TB
+    dataiter_test = iter(val_data_batch)
+    outs = dataiter_test.next()
+    # create grid of images
+    test_img_grid = torchvision.utils.make_grid(outs["image"])
+    test_heatmap_grid = torchvision.utils.make_grid(outs["heatmap"])
+    print("TESTT", outs)
+    # write to tensorboard
+    writer.add_image('Test/images', test_img_grid)
+    writer.add_image('Test/heatmap', test_heatmap_grid)
+
+
     if parser["net"] == "dense121":
         net = densenet.densenet121(pretrained=True, num_classes=3)
     if parser["net"] == "dense161":
@@ -105,7 +129,8 @@ def main(parser):
         net = resnet.resnet101(pretrained=True, num_classes=3)
     if parser["net"] == "res152":
         net = resnet.resnet152(pretrained=True, num_classes=3)
-
+    writer.add_graph(net, outs["image"])
+    writer.flush()
     if torch.cuda.is_available():
         net = net.cuda()
         net = torch.nn.DataParallel(net)
@@ -114,7 +139,7 @@ def main(parser):
 #    optimizer = torch.optim.Adam(net.parameters(), lr=3e-3, weight_decay=parser["weight_decay"])
 
     loss_list, test_results_list = [], []
-    #writer = SummaryWriter()
+    ##LOG TO TENSORBOARD:
 
     for epoch in range(parser["epochs"]):
         adjust_lr(optimizer, epoch)
@@ -155,8 +180,8 @@ if __name__ == "__main__":
     parser["stride"] = 4
 
     parser["data_dir"] = "../boostnet_labeldata"
-    parser["batch_size"] = 2
-    parser["test_batch_size"] = 1
+    parser["batch_size"] = 3
+    parser["test_batch_size"] = 3
     parser["net"] = "dense169"
 
     if platform == 'win':
