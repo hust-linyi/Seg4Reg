@@ -32,7 +32,6 @@ def train_epoch(net, epoch, dataLoader, optimizer, loss_list):
 
         optimizer.zero_grad()
         output = net(images)
-
         loss = torch.mean(torch.abs((label - output)))
 
         loss.backward()
@@ -122,10 +121,14 @@ def main(parser):
         train_epoch(net, epoch, training_data_batch, optimizer, loss_list)
         test(net, epoch, val_data_batch, parser, test_results_list)
         #logging training loss into tb
-        writer.add_scalar("Loss/train_avg", loss_list[-1], epoch)
+        writer.add_scalar("Loss/train_avg_loss", loss_list[-1], epoch)
+        writer.add_scalar("Loss/test-angle1_avg", test_results_list[-1][0], epoch)
+        writer.add_scalar("Loss/test-angle2_avg", test_results_list[-1][1], epoch)
+        writer.add_scalar("Loss/test-angle3_avg", test_results_list[-1][2], epoch)
+        writer.flush()
+
         # for i in loss_list:
         #     writer.add_scalar("Loss/train"+str(i), i, epoch)
-    writer.flush()
     plt.plot(np.linspace(0, parser["epochs"], len(loss_list)), loss_list)
     plt.savefig(os.path.join('./', 'angle_training_loss.png'))
     torch.save(net, os.path.join(os.getcwd(), parser["save_path"], "angle_baseline.pth"))
@@ -134,8 +137,8 @@ def main(parser):
     for k, v in parser.items():
         print('{}: {}'.format(k, v))
     print(test_results)
-    test_results = np.mean(test_results[-10:, :], 0)
-    print('min_abs_angle: %.4f, %.4f, %.4f' % (test_results[0]*90, test_results[1]*90, test_results[2]*90))
+    test_results = np.mean(test_results[-10:, :], 0) #why take the last 10 ??
+    print('mean_abs_angle: %.4f, %.4f, %.4f' % (test_results[0]*90, test_results[1]*90, test_results[2]*90))
 
 
 if __name__ == "__main__":
@@ -152,7 +155,7 @@ if __name__ == "__main__":
     parser["stride"] = 4
 
     parser["data_dir"] = "../boostnet_labeldata"
-    parser["batch_size"] = 1
+    parser["batch_size"] = 2
     parser["test_batch_size"] = 1
     parser["net"] = "dense169"
 
